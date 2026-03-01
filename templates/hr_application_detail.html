@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+{% block title %}{{ application.name }} — Application Detail | RecruiterAI{% endblock %}
+
+{% block content %}
+<div class="hr-layout">
+    <nav class="hr-sidebar">
+        <div style="padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+            <div
+                style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">
+                Logged in as</div>
+            <div style="font-weight: 600; color: var(--text-primary);">{{ session.hr_user.name }}</div>
+        </div>
+        <a href="{{ url_for('hr_dashboard') }}" class="sidebar-link">
+            <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a href="{{ url_for('hr_applications') }}" class="sidebar-link active">
+            <i class="bi bi-people"></i> Applications
+        </a>
+        <a href="{{ url_for('hr_jobs') }}" class="sidebar-link">
+            <i class="bi bi-briefcase"></i> Job Listings
+        </a>
+        <a href="{{ url_for('hr_new_job') }}" class="sidebar-link">
+            <i class="bi bi-plus-circle"></i> Post New Job
+        </a>
+        <div style="margin-top: auto; padding-top: 2rem;">
+            <a href="{{ url_for('hr_logout') }}" class="sidebar-link" style="color: #f87171;">
+                <i class="bi bi-box-arrow-left"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="hr-content">
+        <a href="{{ url_for('hr_applications') }}" class="btn-secondary-custom btn-sm mb-4">
+            <i class="bi bi-arrow-left"></i> Back to Applications
+        </a>
+
+        <!-- Candidate Header -->
+        <div class="card-glass mb-4 fade-in">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h1 style="font-size: 1.8rem; margin-bottom: 0.2rem;">{{ application.name }}</h1>
+                    <p style="color: var(--text-muted); margin-bottom: 0.5rem;">
+                        <i class="bi bi-envelope"></i> {{ application.email }} &nbsp;•&nbsp;
+                        <i class="bi bi-telephone"></i> {{ application.phone }}
+                        {% if application.linkedin %}
+                        &nbsp;•&nbsp; <a href="{{ application.linkedin }}" target="_blank"><i
+                                class="bi bi-linkedin"></i> LinkedIn</a>
+                        {% endif %}
+                    </p>
+                    <span class="badge-stage {{ application.stage }}" style="font-size: 0.85rem;">
+                        {{ application.stage_label }}
+                    </span>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('schedule_meeting', application_id=application._id) }}"
+                        class="btn-accent btn-sm">
+                        <i class="bi bi-calendar-plus"></i> Schedule Meeting
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pipeline Track -->
+            <div class="pipeline-track mt-4">
+                {% set stages = ['applied', 'assessment', 'coding_round', 'behavioural', 'tech_hr', 'final_hr', 'offer', 'hired'] %}
+                {% for stage in stages %}
+                {% set stage_idx = stages.index(stage) %}
+                {% set app_stage_idx = stages.index(application.stage) if application.stage in stages else -1 %}
+                {% if application.stage == stage %}
+                {% set step_class = 'active' %}
+                {% elif stage == 'applied' %}
+                {% set step_class = 'completed' %}
+                {% elif app_stage_idx > stage_idx %}
+                {% set step_class = 'completed' %}
+                {% else %}
+                {% set step_class = '' %}
+                {% endif %}
+                <div class="pipeline-step {{ step_class }}">
+                    <div class="pipeline-dot">
+                        {% if stage == 'applied' %}<i class="bi bi-check"></i>
+                        {% elif stage == 'assessment' %}<i class="bi bi-pencil-square"></i>
+                        {% elif stage == 'coding_round' %}<i class="bi bi-code-slash"></i>
+                        {% elif stage == 'behavioural' %}<i class="bi bi-chat-dots"></i>
+                        {% elif stage == 'tech_hr' %}<i class="bi bi-person-gear"></i>
+                        {% elif stage == 'final_hr' %}<i class="bi bi-person-check"></i>
+                        {% elif stage == 'offer' %}<i class="bi bi-envelope-paper"></i>
+                        {% elif stage == 'hired' %}<i class="bi bi-trophy"></i>
+                        {% endif %}
+                    </div>
+                    <div class="step-label">
+                        {% if stage == 'coding_round' %}Coding
+                        {% elif stage == 'behavioural' %}Behavioural
+                        {% elif stage == 'tech_hr' %}Tech HR
+                        {% elif stage == 'final_hr' %}Final HR
+                        {% else %}{{ stage | title }}{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column -->
+            <div class="col-lg-8">
+                <!-- AI Screening Results -->
+                {% if application.screening_details %}
+                <div class="card-glass mb-4 fade-in stagger-1">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1.2rem;">
+                        <i class="bi bi-robot" style="color: var(--accent);"></i> AI Screening Report
+                    </h3>
+                    <div class="row g-3 mb-3">
+                        <div class="col-3">
+                            <div class="stat-card blue" style="padding: 1rem; text-align: center;">
+                                <div class="stat-number" style="font-size: 1.8rem;">{{ application.screening_score }}%
+                                </div>
+                                <div class="stat-label">Overall Score</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="stat-card purple" style="padding: 1rem; text-align: center;">
+                                <div class="stat-number" style="font-size: 1.5rem;">{{
+                                    application.screening_details.skill_match }}%</div>
+                                <div class="stat-label">Skill Match</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="stat-card yellow" style="padding: 1rem; text-align: center;">
+                                <div class="stat-number" style="font-size: 1.5rem;">{{
+                                    application.screening_details.description_match }}%</div>
+                                <div class="stat-label">JD Match</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="stat-card orange" style="padding: 1rem; text-align: center;">
+                                <div class="stat-number" style="font-size: 1.5rem;">{{
+                                    application.screening_details.experience_match }}%</div>
+                                <div class="stat-label">Experience</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                        {{ application.screening_details.summary }}
+                    </p>
+
+                    <div class="d-flex gap-3 mb-3">
+                        {% if application.assessment_score is not none %}
+                        <div class="stat-card purple p-3" style="flex: 1; text-align: center;">
+                            <div class="stat-label" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Round 1: Assessment</div>
+                            <div class="stat-number" style="font-size: 1.5rem; font-weight: 700;">{{ application.assessment_score }}%</div>
+                        </div>
+                        {% endif %}
+
+                        {% if application.coding_score is not none %}
+                        <div class="stat-card green p-3" style="flex: 1; text-align: center;">
+                            <div class="stat-label" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Round 2: Coding</div>
+                            <div class="stat-number" style="font-size: 1.5rem; font-weight: 700;">{{ application.coding_score }}%</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if application.screening_details.matched_skills %}
+                    <div class="mb-2">
+                        <strong style="font-size: 0.82rem; color: var(--text-muted);">Matched Skills:</strong>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            {% for skill in application.screening_details.matched_skills %}
+                            <span class="skill-tag"
+                                style="background: rgba(74, 222, 128, 0.1); color: #4ade80; border-color: rgba(74, 222, 128, 0.2);">✓
+                                {{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if application.screening_details.missing_skills %}
+                    <div>
+                        <strong style="font-size: 0.82rem; color: var(--text-muted);">Missing Skills:</strong>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            {% for skill in application.screening_details.missing_skills %}
+                            <span class="skill-tag"
+                                style="background: rgba(248, 113, 113, 0.08); color: #f87171; border-color: rgba(248, 113, 113, 0.2);">✗
+                                {{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Assessment Results -->
+                {% if assessment_result %}
+                <div class="card-glass mb-4 fade-in stagger-2">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1.2rem;">
+                        <i class="bi bi-clipboard-check" style="color: var(--cream);"></i> Assessment Results
+                    </h3>
+                    <div class="row g-3 mb-3">
+                        <div class="col-4">
+                            <div class="stat-card {{ 'green' if assessment_result.score >= 60 else 'red' }}"
+                                style="padding: 1rem; text-align: center;">
+                                <div class="stat-number" style="font-size: 1.8rem;">{{ assessment_result.score }}%</div>
+                                <div class="stat-label">Score ({{ assessment_result.correct_count }}/{{
+                                    assessment_result.total_questions }})</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card {{ 'green' if assessment_result.integrity_score >= 70 else 'orange' if assessment_result.integrity_score >= 50 else 'red' }}"
+                                style="padding: 1rem; text-align: center;">
+                                <div class="stat-number" style="font-size: 1.8rem;">{{ assessment_result.integrity_score
+                                    }}%</div>
+                                <div class="stat-label">Integrity Score</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card {{ 'red' if assessment_result.proctor_flags else 'green' }}"
+                                style="padding: 1rem; text-align: center;">
+                                <div class="stat-number" style="font-size: 1.8rem;">{{ assessment_result.proctor_flags |
+                                    length }}</div>
+                                <div class="stat-label">Violations</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if assessment_result.proctor_flags %}
+                    <h4 style="font-size: 0.95rem; color: var(--orange); margin-bottom: 0.8rem;">
+                        <i class="bi bi-exclamation-triangle"></i> Proctor Violations
+                    </h4>
+                    {% for flag in assessment_result.proctor_flags %}
+                    <div class="violation-item">
+                        <i class="bi bi-exclamation-circle"></i> {{ flag }}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div style="color: #4ade80; font-size: 0.9rem;">
+                        <i class="bi bi-check-circle-fill"></i> No integrity violations detected. Clean assessment.
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Proctor Detailed Data -->
+                {% if assessment_result and assessment_result.proctor_data %}
+                <div class="card-glass mb-4 fade-in stagger-3">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1.2rem;">
+                        <i class="bi bi-shield-check" style="color: var(--primary-light);"></i> Proctor Activity Log
+                    </h3>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-4">
+                            <div
+                                style="background: var(--bg-input); border-radius: var(--radius-sm); padding: 0.8rem; text-align: center;">
+                                {% set tab_color = '#f87171' if assessment_result.proctor_data.tab_switches > 2 else
+                                'var(--text-primary)' %}
+                                <div {{
+                                    ('style="font-family: \'Space Grotesk\'; font-size: 1.3rem; font-weight: 700; color: ' ~ tab_color ~ ';"') | safe }}>
+                                    {{ assessment_result.proctor_data.tab_switches }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Tab Switches</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div
+                                style="background: var(--bg-input); border-radius: var(--radius-sm); padding: 0.8rem; text-align: center;">
+                                {% set copy_color = ' #f87171' if assessment_result.proctor_data.copy_attempts> 0 else
+                                    'var(--text-primary)' %}
+                                    <div {{
+                                        ('style="font-family: \'Space Grotesk\'; font-size: 1.3rem; font-weight: 700; color: ' ~ copy_color ~ ';"') | safe }}>
+                                    {{ assessment_result.proctor_data.copy_attempts }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Copy Attempts</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div
+                                style="background: var(--bg-input); border-radius: var(--radius-sm); padding: 0.8rem; text-align: center;">
+                                {% set paste_color = ' #f87171' if assessment_result.proctor_data.paste_attempts> 0
+                                        else
+                                        'var(--text-primary)' %}
+                                        <div {{
+                                            ('style="font-family: \'Space Grotesk\'; font-size: 1.3rem; font-weight: 700; color: ' ~ paste_color ~ ';"') | safe }}>
+                                    {{ assessment_result.proctor_data.paste_attempts }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Paste Attempts</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div
+                                style="background: var(--bg-input); border-radius: var(--radius-sm); padding: 0.8rem; text-align: center;">
+                                {% set face_color = ' var(--orange)' if assessment_result.proctor_data.face_violations>
+                                            0 else 'var(--text-primary)' %}
+                                            <div {{
+                                                ('style="font-family: \'Space Grotesk\'; font-size: 1.3rem; font-weight: 700; color: ' ~ face_color ~ ';"') | safe }}>
+                                    {{ assessment_result.proctor_data.face_violations }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Face Violations</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div
+                                style="background: var(--bg-input); border-radius: var(--radius-sm); padding: 0.8rem; text-align: center;">
+                                {% set multi_color = ' #f87171' if assessment_result.proctor_data.multiple_persons> 0
+                                                else 'var(--text-primary)' %}
+                                                <div {{
+                                                    ('style="font-family: \'Space Grotesk\'; font-size: 1.3rem; font-weight: 700; color: ' ~ multi_color ~ ';"') | safe }}>
+                                    {{ assessment_result.proctor_data.multiple_persons }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Multiple Persons</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div
+                                style="background: var(--bg-input); border-radius: var(--radius-sm); padding: 0.8rem; text-align: center;">
+                                {% set rclick_color = ' var(--orange)' if
+                                                    assessment_result.proctor_data.right_click_attempts> 0 else
+                                                    'var(--text-primary)' %}
+                                                    <div {{
+                                                        ('style="font-family: \'Space Grotesk\'; font-size: 1.3rem; font-weight: 700; color: ' ~ rclick_color ~ ';"') | safe }}>
+                                    {{ assessment_result.proctor_data.right_click_attempts }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Right-Click</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Stage History / Timeline -->
+                {% if application.stage_history %}
+                <div class="card-glass fade-in stagger-3">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1.2rem;">
+                        <i class="bi bi-clock-history" style="color: var(--accent);"></i> Activity Timeline
+                    </h3>
+                    {% for entry in application.stage_history | reverse %}
+                    <div
+                        style="display: flex; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light);">
+                        <div
+                            style="width: 12px; height: 12px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0;">
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">{{ entry.label
+                                }}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">{{ entry.timestamp }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-lg-4">
+                <!-- Update Stage -->
+                <div class="card-glass mb-4 fade-in stagger-2">
+                    <h3 style="font-size: 1rem; margin-bottom: 1rem;">
+                        <i class="bi bi-arrow-repeat" style="color: var(--orange);"></i> Update Stage
+                    </h3>
+                    <form method="POST" action="{{ url_for(' update_stage', application_id=application._id) }}">
+                                                        <select name="stage" class="form-control-custom mb-3">
+                                                            <option value="assessment" {% if
+                                                                application.stage=='assessment' %}selected{% endif %}>
+                                                                Round 1: Assessment Pending</option>
+                                                            <option value="coding_round" {% if
+                                                                application.stage=='coding_round' %}selected{% endif %}>
+                                                                Round 2: Coding Assessment</option>
+                                                            <option value="behavioural" {% if
+                                                                application.stage=='behavioural' %}selected{% endif %}>
+                                                                Round 3: Behavioural Round</option>
+                                                            <option value="tech_hr" {% if
+                                                                application.stage=='tech_hr' %}selected{% endif %}>
+                                                                Round 4: Tech HR</option>
+                                                            <option value="final_hr" {% if
+                                                                application.stage=='final_hr' %}selected{% endif %}>
+                                                                Round 5: Final HR</option>
+                                                            <option value="offer" {% if application.stage=='offer'
+                                                                %}selected{% endif %}>Offer Extended
+                                                            </option>
+                                                            <option value="hired" {% if application.stage=='hired'
+                                                                %}selected{% endif %}>Hired</option>
+                                                            <option value="rejected" {% if application.stage=='rejected'
+                                                                %}selected{% endif %}>Rejected
+                                                            </option>
+                                                            <option value="flagged" {% if application.stage=='flagged'
+                                                                %}selected{% endif %}>Flagged
+                                                            </option>
+                                                        </select>
+                                                        <button type="submit" class="btn-accent btn-sm w-100">
+                                                            <i class="bi bi-check"></i> Update Stage
+                                                        </button>
+                                                        </form>
+                                                    </div>
+
+                                                    <!-- Quick Actions -->
+                                                    <div class="card-glass mb-4 fade-in stagger-3">
+                                                        <h3 style="font-size: 1rem; margin-bottom: 1rem;">
+                                                            <i class="bi bi-lightning" style="color: var(--cream);"></i>
+                                                            Quick Actions
+                                                        </h3>
+                                                        <div class="d-grid gap-2">
+                                                            <a href="{{ url_for('schedule_meeting', application_id=application._id) }}"
+                                                                class="btn-accent btn-sm">
+                                                                <i class="bi bi-calendar-plus"></i> Schedule Interview
+                                                            </a>
+                                                            {% if application.stage == 'interview' %}
+                                                            <form method="POST"
+                                                                action="{{ url_for('update_stage', application_id=application._id) }}"
+                                                                style="display: inline;">
+                                                                <input type="hidden" name="stage" value="offer">
+                                                                <button type="submit"
+                                                                    class="btn-primary-custom btn-sm w-100">
+                                                                    <i class="bi bi-envelope-paper"></i> Extend Offer
+                                                                </button>
+                                                            </form>
+                                                            {% endif %}
+                                                            {% if application.stage == 'offer' %}
+                                                            <form method="POST"
+                                                                action="{{ url_for('update_stage', application_id=application._id) }}"
+                                                                style="display: inline;">
+                                                                <input type="hidden" name="stage" value="hired">
+                                                                <button type="submit"
+                                                                    class="btn-primary-custom btn-sm w-100"
+                                                                    style="background: linear-gradient(135deg, #4ade80, #22c55e);">
+                                                                    <i class="bi bi-trophy"></i> Mark as Hired
+                                                                </button>
+                                                            </form>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Scheduled Meetings -->
+                                                    {% if meetings %}
+                                                    <div class="card-glass fade-in stagger-4">
+                                                        <h3 style="font-size: 1rem; margin-bottom: 1rem;">
+                                                            <i class="bi bi-calendar-event"
+                                                                style="color: var(--accent);"></i> Scheduled Meetings
+                                                        </h3>
+                                                        {% for meeting in meetings %}
+                                                        <div class="meeting-card">
+                                                            <div class="meeting-date-box">
+                                                                <div class="day">{{ meeting.meeting_date.split('-')[2]
+                                                                    if meeting.meeting_date else '—' }}
+                                                                </div>
+                                                                <div class="month">{{ meeting.meeting_date.split('-')[1]
+                                                                    if meeting.meeting_date else '' }}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div
+                                                                    style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">
+                                                                    {{ meeting.meeting_type | title }}
+                                                                </div>
+                                                                <div
+                                                                    style="font-size: 0.82rem; color: var(--text-muted);">
+                                                                    <i class="bi bi-clock"></i> {{ meeting.meeting_time
+                                                                    }}
+                                                                </div>
+                                                                {% if meeting.meeting_link %}
+                                                                <a href="{{ meeting.meeting_link }}" target="_blank"
+                                                                    style="font-size: 0.8rem;">
+                                                                    <i class="bi bi-camera-video"></i> Join Link
+                                                                </a>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endblock %}
+
+                                    {% block footer %}{% endblock %}

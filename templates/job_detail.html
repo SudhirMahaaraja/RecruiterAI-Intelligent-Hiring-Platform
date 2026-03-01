@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} — RecruiterAI{% endblock %}
+
+{% block content %}
+<section class="py-4r">
+    <div class="container-custom" style="max-width: 900px;">
+        <a href="{{ url_for('index') }}#openings" class="btn-secondary-custom btn-sm mb-4">
+            <i class="bi bi-arrow-left"></i> All Openings
+        </a>
+
+        <div class="card-glass fade-in" style="padding: 2.5rem;">
+            <div class="d-flex align-items-start gap-3 mb-4">
+                <div class="job-icon {% if job.department == 'Engineering' %}engineering{% elif job.department == 'Data & Analytics' %}data{% else %}infra{% endif %}"
+                    style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    {% if job.department == 'Engineering' %}
+                    <i class="bi bi-code-slash"></i>
+                    {% elif job.department == 'Data & Analytics' %}
+                    <i class="bi bi-graph-up-arrow"></i>
+                    {% else %}
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h1 style="font-size: 2rem; margin-bottom: 0.3rem;">{{ job.title }}</h1>
+                    <div class="job-meta">
+                        <span><i class="bi bi-building"></i> {{ job.department }}</span>
+                        <span><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
+                        <span><i class="bi bi-clock"></i> {{ job.type }}</span>
+                        <span><i class="bi bi-bar-chart"></i> {{ job.experience }}</span>
+                        <span><i class="bi bi-cash-stack"></i> {{ job.salary_range }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <h4 class="mb-3" style="color: var(--accent);">
+                <i class="bi bi-info-circle"></i> About This Role
+            </h4>
+            <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 2rem;">
+                {{ job.description }}
+            </p>
+
+            <h4 class="mb-3" style="color: var(--accent);">
+                <i class="bi bi-check2-square"></i> Requirements
+            </h4>
+            <ul style="color: var(--text-secondary); margin-bottom: 2rem; padding-left: 1.2rem;">
+                {% for req in job.requirements %}
+                <li style="margin-bottom: 0.5rem;">{{ req }}</li>
+                {% endfor %}
+            </ul>
+
+            <h4 class="mb-3" style="color: var(--accent);">
+                <i class="bi bi-list-task"></i> Responsibilities
+            </h4>
+            <ul style="color: var(--text-secondary); margin-bottom: 2rem; padding-left: 1.2rem;">
+                {% for resp in job.responsibilities %}
+                <li style="margin-bottom: 0.5rem;">{{ resp }}</li>
+                {% endfor %}
+            </ul>
+
+            <h4 class="mb-3" style="color: var(--accent);">
+                <i class="bi bi-tags"></i> Key Skills
+            </h4>
+            <div class="job-skills mb-4">
+                {% for skill in job.skills %}
+                <span class="skill-tag">{{ skill }}</span>
+                {% endfor %}
+            </div>
+
+            <hr class="divider">
+
+            <div class="text-center">
+                <a href="{{ url_for('apply', job_id=job._id) }}" class="btn-primary-custom btn-lg">
+                    <i class="bi bi-send-fill"></i> Apply for This Role
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

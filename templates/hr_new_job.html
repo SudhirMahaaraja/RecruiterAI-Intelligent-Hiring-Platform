@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Post New Job | RecruiterAI{% endblock %}
+
+{% block content %}
+<div class="hr-layout">
+    <nav class="hr-sidebar">
+        <div style="padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+            <div
+                style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">
+                Logged in as</div>
+            <div style="font-weight: 600; color: var(--text-primary);">{{ session.hr_user.name }}</div>
+        </div>
+        <a href="{{ url_for('hr_dashboard') }}" class="sidebar-link">
+            <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a href="{{ url_for('hr_applications') }}" class="sidebar-link">
+            <i class="bi bi-people"></i> Applications
+        </a>
+        <a href="{{ url_for('hr_jobs') }}" class="sidebar-link">
+            <i class="bi bi-briefcase"></i> Job Listings
+        </a>
+        <a href="{{ url_for('hr_new_job') }}" class="sidebar-link active">
+            <i class="bi bi-plus-circle"></i> Post New Job
+        </a>
+    </nav>
+
+    <div class="hr-content">
+        <div style="max-width: 750px;">
+            <h1 style="font-size: 1.8rem; margin-bottom: 0.3rem;">Post New Job</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Create a new job listing for candidates to apply
+            </p>
+
+            <div class="card-glass fade-in" style="padding: 2.5rem;">
+                <form method="POST">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label-custom">Job Title <span class="text-orange">*</span></label>
+                            <input type="text" name="title" class="form-control-custom"
+                                placeholder="e.g. Senior Python Developer" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Department</label>
+                            <select name="department" class="form-control-custom">
+                                <option value="Engineering">Engineering</option>
+                                <option value="Data & Analytics">Data & Analytics</option>
+                                <option value="Infrastructure">Infrastructure</option>
+                                <option value="Design">Design</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Sales">Sales</option>
+                                <option value="HR">HR</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Location</label>
+                            <input type="text" name="location" class="form-control-custom"
+                                placeholder="e.g. Bangalore, India">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Type</label>
+                            <select name="type" class="form-control-custom">
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Internship">Internship</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Experience</label>
+                            <input type="text" name="experience" class="form-control-custom"
+                                placeholder="e.g. 0-2 years" required>
+                            <small style="color: var(--text-muted); font-size: 0.75rem;">(Max 3 years allowed)</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label-custom">Salary Range</label>
+                        <input type="text" name="salary_range" class="form-control-custom"
+                            placeholder="e.g. ₹15L - ₹25L">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label-custom">Job Description</label>
+                        <textarea name="description" class="form-control-custom" rows="4"
+                            placeholder="Describe the role, team, and what the candidate will be doing..."
+                            required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label-custom">Requirements (one per line)</label>
+                        <textarea name="requirements" class="form-control-custom" rows="5"
+                            placeholder="Strong proficiency in Python 3.x&#10;Experience with Flask or Django&#10;Knowledge of SQL and NoSQL databases"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label-custom">Responsibilities (one per line)</label>
+                        <textarea name="responsibilities" class="form-control-custom" rows="4"
+                            placeholder="Design scalable services&#10;Write clean, tested code&#10;Mentor junior developers"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-custom">Skills (comma-separated)</label>
+                        <input type="text" name="skills" class="form-control-custom"
+                            placeholder="e.g. python, flask, mongodb, docker, aws">
+                        <small style="color: var(--text-muted);">These skills are used by the AI screener to match
+                            candidates.</small>
+                    </div>
+
+                    <button type="submit" class="btn-primary-custom btn-lg w-100">
+                        <i class="bi bi-megaphone"></i> Publish Job Listing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Coding Assessment — {{ application.job_title }} | RecruiterAI{% endblock %}
+
+{% block head %}
+<style>
+    .coding-container {
+        padding: 2rem 0 4rem;
+    }
+    .problem-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .problem-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--accent);
+    }
+    .problem-description {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+    .code-editor {
+        width: 100%;
+        height: 300px;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        font-size: 14px;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #333;
+        resize: vertical;
+        outline: none;
+    }
+    .code-editor:focus {
+        border-color: var(--accent);
+    }
+    .test-cases {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: rgba(255,255,255,0.05);
+        border-radius: 8px;
+    }
+    .test-case-item {
+        font-family: monospace;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-muted);
+    }
+    .assessment-header {
+        position: sticky;
+        top: 80px;
+        z-index: 100;
+        background: var(--bg-glass);
+        backdrop-filter: blur(12px);
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="coding-container">
+    <div class="container-custom" style="max-width: 900px;">
+        <div class="assessment-header">
+            <div>
+                <h2 style="font-size: 1.2rem; margin-bottom: 0.2rem;">Round 2: Coding Assessment</h2>
+                <span style="font-size: 0.82rem; color: var(--text-muted);">{{ problems | length }} Problems • 45 Minutes</span>
+            </div>
+            <div id="timer" style="font-weight: 700; color: var(--accent); font-size: 1.2rem;">
+                <i class="bi bi-clock"></i> <span id="timerDisplay">45:00</span>
+            </div>
+        </div>
+
+        <form id="codingForm">
+            {% for problem in problems %}
+            <div class="problem-card fade-in">
+                <div class="problem-title">{{ loop.index }}. {{ problem.title }}</div>
+                <div class="problem-description">{{ problem.description }}</div>
+                
+                <div style="margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem;">Solution (Python):</div>
+                <textarea class="code-editor" data-problem-id="{{ problem._id }}" spellcheck="false">{{ problem.initial_code }}</textarea>
+
+                <div class="test-cases">
+                    <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
+                        <i class="bi bi-bug"></i> Sample Test Cases:
+                    </div>
+                    {% for tc in problem.test_cases %}
+                    <div class="test-case-item">
+                        Input: <code>{{ tc.input }}</code> → Expected: <code>{{ tc.expected }}</code>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="text-center mt-4">
+                <button type="button" class="btn-primary-custom btn-lg" onclick="submitCodingAssessment()">
+                    <i class="bi bi-cloud-upload"></i> Submit Solutions
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const applicationId = "{{ application._id }}";
+    let timeLeft = 45 * 60;
+
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        const min = Math.floor(timeLeft / 60);
+        const sec = timeLeft % 60;
+        document.getElementById('timerDisplay').textContent = 
+            `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            submitCodingAssessment();
+        }
+    }, 1000);
+
+    async function submitCodingAssessment() {
+        const editors = document.querySelectorAll('.code-editor');
+        const solutions = Array.from(editors).map(editor => ({
+            problem_id: editor.dataset.problemId,
+            code: editor.value
+        }));
+
+        try {
+            const response = await fetch('/api/submit-coding-assessment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    application_id: applicationId,
+                    solutions: solutions
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                window.location.href = '/candidate/dashboard';
+            } else {
+                alert('Error submitting assessment: ' + result.error);
+            }
+        } catch (err) {
+            console.error('Submission error:', err);
+            alert('Failed to submit assessment. Please try again.');
+        }
+    }
+
+    // Handle Tab key in textarea
+    document.querySelectorAll('.code-editor').forEach(textarea => {
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+    });
+</script>
+{% endblock %}

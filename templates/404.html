@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found | RecruiterAI{% endblock %}
+
+{% block content %}
+<section class="py-4r">
+    <div class="container-custom text-center">
+        <div
+            style="font-size: 6rem; font-family: 'Space Grotesk', sans-serif; font-weight: 900; color: var(--primary); line-height: 1;">
+            404</div>
+        <h1 style="font-size: 1.5rem; margin: 1rem 0;">Page Not Found</h1>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">The page you're looking for doesn't exist or has been
+            moved.</p>
+        <a href="{{ url_for('index') }}" class="btn-primary-custom">
+            <i class="bi bi-house-door"></i> Go Home
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+{% block title %}Assessment — {{ application.job_title }} | RecruiterAI{% endblock %}
+
+{% block head %}
+<style>
+    /* hide navbar during assessment for distraction-free experience */
+    .footer {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="assessment-container" style="padding: 1rem 0 4rem;">
+    <div class="container-custom" style="max-width: 850px;">
+        <!-- Assessment Header - Sticky -->
+        <div class="assessment-header">
+            <div>
+                <h2 style="font-size: 1.2rem; margin-bottom: 0.2rem;">{{ assessment.title }}</h2>
+                <span style="font-size: 0.82rem; color: var(--text-muted);">{{ assessment.questions | length }}
+                    Questions • {{ duration }} Minutes</span>
+            </div>
+            <div>
+                <div class="timer" id="timer">
+                    <i class="bi bi-clock"></i>
+                    <span id="timerDisplay">{{ '%02d' % duration }}:00</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-align: right;" id="questionProgress">
+                    0 of {{ assessment.questions | length }} answered
+                </div>
+            </div>
+        </div>
+
+        <!-- Questions -->
+        <div id="questionsContainer">
+            {% for q in assessment.questions %}
+            <div class="question-card fade-in" id="question-{{ q.id }}">
+                <div class="question-number">
+                    <span>Question {{ q.id }}</span>
+                    <span class="difficulty {{ q.difficulty }}">{{ q.difficulty }}</span>
+                </div>
+                <div class="question-text">{{ q.question }}</div>
+                <div class="option-group">
+                    {% for opt in q.options %}
+                    <div class="option-item" data-question="{{ q.id }}" data-option="{{ loop.index0 }}"
+                        onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <span>{{ opt }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center mt-4">
+            <button class="btn-primary-custom btn-lg" id="submitAssessment" onclick="submitAssessment()">
+                <i class="bi bi-check2-circle"></i> Submit Assessment
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Proctor Widget -->
+<div class="proctor-widget" id="proctorWidget">
+    <video id="webcamFeed" autoplay muted playsinline></video>
+    <div class="proctor-status" id="proctorStatus">
+        <span class="status-dot yellow"></span>
+        Initializing camera...
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+    // ─── State ───────────────────────────────────────────
+    const applicationId = "{{ application._id }}";
+    const totalQuestions = Number("{{ assessment.questions | length }}");
+    const durationMinutes = Number("{{ duration }}");
+    const answers = {};
+    let testTerminated = false;
+
+    const proctorData = {
+        tab_switches: 0,
+        copy_attempts: 0,
+        paste_attempts: 0,
+        right_click_attempts: 0,
+        face_violations: 0,
+        multiple_persons: 0,
+        ai_detection_flags: 0
+    };
+
+    // Consecutive violation counters for auto-termination
+    let consecutiveCameraHidden = 0;
+    let consecutiveMultiplePersons = 0;
+
+    let timeLeft = durationMinutes * 60;
+    let detectionInterval = null;
+
+    // ─── Timer ───────────────────────────────────────────
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerEl = document.getElementById('timer');
+
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        const min = Math.floor(timeLeft / 60);
+        const sec = timeLeft % 60;
+        timerDisplay.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+
+        if (timeLeft <= 300 && timeLeft > 60) {
+            timerEl.classList.add('warning');
+            timerEl.classList.remove('danger');
+        } else if (timeLeft <= 60) {
+            timerEl.classList.add('danger');
+            timerEl.classList.remove('warning');
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            submitAssessment();
+        }
+    }, 1000);
+
+    // ─── Option Selection ────────────────────────────────
+    function selectOption(el) {
+        const questionId = el.dataset.question;
+        const optionIdx = parseInt(el.dataset.option, 10);
+        const siblings = el.parentElement.querySelectorAll('.option-item');
+        siblings.forEach(s => s.classList.remove('selected'));
+        el.classList.add('selected');
+        answers[questionId] = optionIdx;
+
+        const answered = Object.keys(answers).length;
+        document.getElementById('questionProgress').textContent =
+            `${answered} of ${totalQuestions} answered`;
+    }
+
+    // ─── Auto-Terminate (reject + redirect) ──────────────
+    async function autoTerminateTest(reason) {
+        if (testTerminated) return;
+        testTerminated = true;
+
+        clearInterval(timerInterval);
+        if (detectionInterval) clearInterval(detectionInterval);
+
+        try {
+            await fetch('/api/auto-terminate-assessment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    application_id: applicationId,
+                    reason: reason,
+                    proctor_data: proctorData
+                })
+            });
+        } catch (err) {
+            console.warn('Terminate error:', err);
+        }
+
+        // Show termination screen
+        document.querySelector('main').innerHTML = `
+            <section class="py-4r">
+                <div class="container-custom" style="max-width: 600px;">
+                    <div class="card-glass text-center fade-in" style="padding: 3rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🚫</div>
+                        <h2 style="margin-bottom: 0.5rem; color: #f87171;">Assessment Terminated</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">${reason}</p>
+                        <div class="badge-stage rejected" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">
+                            Your assessment has been automatically rejected due to a proctoring violation.
+                        </div>
+                        <a href="/" class="btn-primary-custom mt-4 d-inline-flex">
+                            <i class="bi bi-house-door"></i> Go to Home
+                        </a>
+                    </div>
+                </div>
+            </section>
+        `;
+
+        // Hide proctor widget
+        const pw = document.getElementById('proctorWidget');
+        if (pw) pw.style.display = 'none';
+    }
+
+    // ─── Tab Switch Warning Modal ────────────────────────
+    function showTabSwitchWarningModal() {
+        // Create full-screen warning overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'tabWarningOverlay';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); z-index: 99999;
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s ease;
+        `;
+        overlay.innerHTML = `
+            <div style="background: var(--bg-card, #1a1b2e); border: 1px solid #f8717140; border-radius: 16px; 
+                        padding: 3rem; max-width: 500px; text-align: center; box-shadow: 0 0 60px rgba(248,113,113,0.2);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h2 style="color: #f87171; margin-bottom: 0.5rem; font-size: 1.5rem;">Tab Switch Detected!</h2>
+                <p style="color: var(--text-secondary, #b0b0b0); margin-bottom: 1rem; font-size: 0.95rem;">
+                    Switching tabs during the assessment is <strong>strictly prohibited</strong>.
+                </p>
+                <p style="color: #f87171; font-weight: 600; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                    ⚠️ If you switch tabs again, your test will be automatically terminated and you will be rejected.
+                </p>
+                <p style="color: var(--text-muted, #888); font-size: 0.85rem; margin-bottom: 2rem;">
+                    You are being logged out. Please log in again to continue your assessment.
+                </p>
+                <a href="/candidate/login" style="display: inline-block; padding: 0.7rem 2rem; background: linear-gradient(135deg, #f87171, #ef4444); 
+                   color: white; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+                    <i class="bi bi-box-arrow-in-right"></i> Log In Again
+                </a>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    // ─── Proctor: Tab Switching (strict) ─────────────────
+    let tabSwitchHandled = false;
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && !testTerminated) {
+            proctorData.tab_switches++;
+            logProctorEvent('tab_switch', `Tab switch #${proctorData.tab_switches}`);
+
+            if (proctorData.tab_switches > 2) {
+                // 3rd+ tab switch → auto-terminate
+                autoTerminateTest('Excessive tab switching (switched tabs more than 2 times)');
+            } else if (proctorData.tab_switches === 1 && !tabSwitchHandled) {
+                // 1st tab switch → warning + logout
+                tabSwitchHandled = true;
+                showWarning('Tab switch detected! Do NOT switch tabs again or your test will be terminated.');
+
+                // Wait until they come back, then show modal & log them out
+                const returnHandler = () => {
+                    if (!document.hidden) {
+                        document.removeEventListener('visibilitychange', returnHandler);
+                        showTabSwitchWarningModal();
+                        // Log out candidate session (via server)
+                        fetch('/candidate/logout', { method: 'GET' }).catch(() => { });
+                    }
+                };
+                document.addEventListener('visibilitychange', returnHandler);
+            } else if (proctorData.tab_switches === 2) {
+                // 2nd tab switch → final warning
+                showWarning('FINAL WARNING: One more tab switch and your test will be terminated!');
+            }
+        }
+    });
+
+    // Remove the blur listener that was double-counting tab switches
+
+    // ─── Proctor: Copy/Paste ─────────────────────────────
+    document.addEventListener('copy', (e) => {
+        e.preventDefault();
+        proctorData.copy_attempts++;
+        showWarning(`Copy attempt detected! (${proctorData.copy_attempts} total)`);
+        logProctorEvent('copy_attempt', `Copy attempt #${proctorData.copy_attempts}`);
+    });
+
+    document.addEventListener('paste', (e) => {
+        e.preventDefault();
+        proctorData.paste_attempts++;
+        showWarning(`Paste attempt detected! (${proctorData.paste_attempts} total)`);
+        logProctorEvent('paste_attempt', `Paste attempt #${proctorData.paste_attempts}`);
+    });
+
+    // ─── Proctor: Right Click ────────────────────────────
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        proctorData.right_click_attempts++;
+        showWarning('Right-click is disabled during the assessment.');
+        logProctorEvent('right_click', `Right-click attempt #${proctorData.right_click_attempts}`);
+    });
+
+    // ─── Proctor: Keyboard Shortcuts ─────────────────────
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && ['c', 'v', 'a', 's', 'u'].includes(e.key.toLowerCase())) {
+            e.preventDefault();
+            proctorData.copy_attempts++;
+            showWarning('Keyboard shortcuts are disabled during the assessment.');
+        }
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+            e.preventDefault();
+            proctorData.ai_detection_flags++;
+            showWarning('Developer tools are not allowed during the assessment.');
+        }
+    });
+
+    // ─── Proctor: Webcam + YOLO (strict) ─────────────────
+    async function initWebcam() {
+        const statusEl = document.getElementById('proctorStatus');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 320, height: 240, facingMode: 'user' }
+            });
+            const video = document.getElementById('webcamFeed');
+            video.srcObject = stream;
+
+            statusEl.innerHTML = '<span class="status-dot green"></span> Monitoring active';
+
+            // Start periodic YOLO detection
+            detectionInterval = setInterval(() => detectFrame(video), 8000);
+        } catch (err) {
+            console.warn('Webcam not available:', err);
+            statusEl.innerHTML = '<span class="status-dot red"></span> Camera unavailable';
+            proctorData.face_violations++;
+            consecutiveCameraHidden++;
+
+            // If camera is denied outright, count it
+            if (consecutiveCameraHidden >= 2) {
+                autoTerminateTest('Camera denied/hidden repeatedly');
+            }
+        }
+    }
+
+    async function detectFrame(video) {
+        if (testTerminated) return;
+
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frameData = canvas.toDataURL('image/jpeg', 0.5);
+
+            const response = await fetch('/api/detect-frame', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ frame: frameData, application_id: applicationId })
+            });
+
+            const result = await response.json();
+            const statusEl = document.getElementById('proctorStatus');
+
+            if (result.person_count === 0) {
+                proctorData.face_violations++;
+                consecutiveCameraHidden++;
+                consecutiveMultiplePersons = 0; // reset the other counter
+                statusEl.innerHTML = '<span class="status-dot red"></span> Face not detected!';
+                showWarning(`Your face is not visible! (${consecutiveCameraHidden} consecutive detection${consecutiveCameraHidden > 1 ? 's' : ''})`);
+
+                if (consecutiveCameraHidden >= 2) {
+                    autoTerminateTest('Face not detected / camera hidden 2 times in a row');
+                }
+            } else if (result.person_count > 1) {
+                proctorData.multiple_persons++;
+                consecutiveMultiplePersons++;
+                consecutiveCameraHidden = 0; // reset the other counter
+                statusEl.innerHTML = '<span class="status-dot red"></span> Multiple persons!';
+                showWarning(`Multiple persons detected! (${consecutiveMultiplePersons} consecutive detection${consecutiveMultiplePersons > 1 ? 's' : ''})`);
+                logProctorEvent('multiple_persons', `Detected ${result.person_count} persons`);
+
+                if (consecutiveMultiplePersons >= 2) {
+                    autoTerminateTest('Multiple persons detected 2 times in a row');
+                }
+            } else if (result.phone_detected) {
+                proctorData.ai_detection_flags++;
+                consecutiveCameraHidden = 0;
+                consecutiveMultiplePersons = 0;
+                statusEl.innerHTML = '<span class="status-dot red"></span> Phone detected!';
+                showWarning('Mobile phone detected! Please put it away.');
+                logProctorEvent('phone_detected', 'Mobile phone visible in frame');
+            } else {
+                // All clear - reset consecutive counters
+                consecutiveCameraHidden = 0;
+                consecutiveMultiplePersons = 0;
+                statusEl.innerHTML = '<span class="status-dot green"></span> Monitoring active';
+            }
+        } catch (err) {
+            console.warn('Detection error:', err);
+        }
+    }
+
+    // ─── Warning Banner ──────────────────────────────────
+    function showWarning(msg) {
+        const banner = document.getElementById('warningBanner');
+        const text = document.getElementById('warningText');
+        text.textContent = msg;
+        banner.classList.add('show');
+        setTimeout(() => banner.classList.remove('show'), 4000);
+    }
+
+    // ─── Proctor Log ─────────────────────────────────────
+    function logProctorEvent(type, detail) {
+        fetch('/api/proctor-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                application_id: applicationId,
+                event_type: type,
+                detail: detail
+            })
+        }).catch(err => console.warn('Log error:', err));
+    }
+
+    // ─── Submit ──────────────────────────────────────────
+    async function submitAssessment() {
+        if (testTerminated) return;
+
+        clearInterval(timerInterval);
+        if (detectionInterval) clearInterval(detectionInterval);
+
+        const btn = document.getElementById('submitAssessment');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/submit-assessment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    application_id: applicationId,
+                    answers: answers,
+                    proctor_data: proctorData
+                })
+            });
+
+            if (response.status === 401) {
+                // Session expired - redirect to login
+                window.location.href = '/candidate/login';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Show result modal
+                document.querySelector('main').innerHTML = `
+                    <section class="py-4r">
+                        <div class="container-custom" style="max-width: 600px;">
+                            <div class="card-glass text-center fade-in" style="padding: 3rem;">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">
+                                    ${result.score >= 60 && result.integrity_score >= 50 ? '🎉' : '📊'}
+                                </div>
+                                <h2 style="margin-bottom: 0.5rem;">Assessment Complete!</h2>
+                                <p style="color: var(--text-muted); margin-bottom: 2rem;">Here's how you did:</p>
+                                
+                                <div class="row g-4 mb-4">
+                                    <div class="col-6">
+                                        <div class="stat-card purple">
+                                            <div class="stat-number">${result.score}%</div>
+                                            <div class="stat-label">Your Score</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-card ${result.integrity_score >= 70 ? 'green' : 'orange'}">
+                                            <div class="stat-number">${result.integrity_score}%</div>
+                                            <div class="stat-label">Integrity Score</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="badge-stage ${result.stage}" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">
+                                    ${result.message}
+                                </div>
+
+                                <a href="/candidate/dashboard" class="btn-primary-custom mt-4 d-inline-flex">
+                                    <i class="bi bi-arrow-right"></i> Go to Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+                `;
+
+                // Hide proctor widget
+                document.getElementById('proctorWidget').style.display = 'none';
+            } else {
+                throw new Error(result.error || 'Submission failed');
+            }
+        } catch (err) {
+            console.error('Submit error:', err);
+            alert('Error submitting assessment: ' + err.message + '. Please try again.');
+            btn.innerHTML = '<i class="bi bi-check2-circle"></i> Submit Assessment';
+            btn.disabled = false;
+        }
+    }
+
+    // ─── Init ────────────────────────────────────────────
+    initWebcam();
+</script>
+{% endblock %}

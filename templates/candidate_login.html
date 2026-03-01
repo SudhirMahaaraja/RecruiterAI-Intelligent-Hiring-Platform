@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Candidate Login | RecruiterAI{% endblock %}
+
+{% block content %}
+<section class="py-4r">
+    <div class="container-custom" style="max-width: 480px;">
+        <div class="card-glass fade-in" style="padding: 2.5rem;">
+            <div class="text-center mb-4">
+                <div
+                    style="width: 70px; height: 70px; border-radius: var(--radius-lg); background: linear-gradient(135deg, rgba(87, 106, 143, 0.2), rgba(183, 189, 247, 0.1)); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.8rem; color: var(--accent);">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <h1 style="font-size: 1.6rem;">Candidate Portal</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Log in with your email to track your application
+                    status</p>
+            </div>
+
+            <form method="POST">
+                <div class="mb-4">
+                    <label class="form-label-custom">Email Address</label>
+                    <input type="email" name="email" class="form-control-custom"
+                        placeholder="Enter your registered email" required autofocus>
+                </div>
+                <button type="submit" class="btn-primary-custom btn-lg w-100">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <small style="color: var(--text-muted);">
+                    Haven't applied yet? <a href="{{ url_for('index') }}#openings">Browse openings</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

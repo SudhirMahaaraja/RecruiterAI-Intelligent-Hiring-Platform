@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}HR Dashboard | RecruiterAI{% endblock %}
+
+{% block content %}
+<style>
+    .score-high {
+        color: #4ade80 !important;
+    }
+
+    .score-medium {
+        color: var(--cream) !important;
+    }
+
+    .score-low {
+        color: #f87171 !important;
+    }
+
+    .text-bold {
+        font-weight: 700;
+    }
+
+    .text-grotesk {
+        font-family: 'Space Grotesk', sans-serif;
+    }
+</style>
+<div class="hr-layout">
+    <!-- Sidebar -->
+    <nav class="hr-sidebar">
+        <div style="padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+            <div
+                style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">
+                Logged in as</div>
+            <div style="font-weight: 600; color: var(--text-primary);">{{ session.hr_user.name }}</div>
+        </div>
+        <a href="{{ url_for('hr_dashboard') }}" class="sidebar-link active">
+            <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a href="{{ url_for('hr_applications') }}" class="sidebar-link">
+            <i class="bi bi-people"></i> Applications
+        </a>
+        <a href="{{ url_for('hr_jobs') }}" class="sidebar-link">
+            <i class="bi bi-briefcase"></i> Job Listings
+        </a>
+        <a href="{{ url_for('hr_new_job') }}" class="sidebar-link">
+            <i class="bi bi-plus-circle"></i> Post New Job
+        </a>
+        <div style="margin-top: auto; padding-top: 2rem;">
+            <a href="{{ url_for('hr_logout') }}" class="sidebar-link" style="color: #f87171;">
+                <i class="bi bi-box-arrow-left"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="hr-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 style="font-size: 1.8rem;">Dashboard</h1>
+                <p style="color: var(--text-muted);">Overview of your hiring pipeline</p>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card blue">
+                    <div class="stat-icon"><i class="bi bi-people"></i></div>
+                    <div class="stat-number">{{ stats.total_applications }}</div>
+                    <div class="stat-label">Total Applications</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card purple">
+                    <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <div class="stat-number">{{ stats.pending_assessment }}</div>
+                    <div class="stat-label">Pending Assessment</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card yellow">
+                    <div class="stat-icon"><i class="bi bi-camera-video"></i></div>
+                    <div class="stat-number">{{ stats.interview_ready }}</div>
+                    <div class="stat-label">Interview Ready</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card orange">
+                    <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="stat-number">{{ stats.flagged }}</div>
+                    <div class="stat-label">Flagged</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card green">
+                    <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+                    <div class="stat-number">{{ stats.hired }}</div>
+                    <div class="stat-label">Hired</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card red">
+                    <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+                    <div class="stat-number">{{ stats.rejected }}</div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        <div class="card-glass" style="padding: 0; overflow: hidden;">
+            <div style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 style="font-size: 1.1rem; margin: 0;">Recent Applications</h3>
+                    <a href="{{ url_for('hr_applications') }}" class="btn-secondary-custom btn-sm">View All</a>
+                </div>
+            </div>
+
+            {% if applications %}
+            <div style="overflow-x: auto;">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Position</th>
+                            <th>AI Score</th>
+                            <th>Assessment</th>
+                            <th>Stage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: var(--text-primary);">{{ app.name }}</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted);">{{ app.email }}</div>
+                            </td>
+                            <td>{{ app.job_title }}</td>
+                            <td>
+                                <span
+                                    class="{{ 'score-high' if app.screening_score >= 70 else 'score-medium' if app.screening_score >= 50 else 'score-low' }} text-bold text-grotesk">
+                                    {{ app.screening_score }}%
+                                </span>
+                            </td>
+                            <td>
+                                {% if app.assessment_score is not none %}
+                                <span
+                                    class="{{ 'score-high' if app.assessment_score >= 60 else 'score-low' }} text-bold text-grotesk">
+                                    {{ app.assessment_score }}%
+                                </span>
+                                {% else %}
+                                <span style="color: var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge-stage {{ app.stage }}">{{ app.stage_label }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('hr_application_detail', application_id=app._id) }}"
+                                    class="btn-secondary-custom btn-sm" style="padding: 0.3rem 0.8rem;">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 3rem;">
+                <i class="bi bi-inbox"></i>
+                <h3>No Applications Yet</h3>
+                <p>Applications will appear here as candidates apply.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Job Listings | RecruiterAI{% endblock %}
+
+{% block content %}
+<div class="hr-layout">
+    <nav class="hr-sidebar">
+        <div style="padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+            <div
+                style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">
+                Logged in as</div>
+            <div style="font-weight: 600; color: var(--text-primary);">{{ session.hr_user.name }}</div>
+        </div>
+        <a href="{{ url_for('hr_dashboard') }}" class="sidebar-link">
+            <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a href="{{ url_for('hr_applications') }}" class="sidebar-link">
+            <i class="bi bi-people"></i> Applications
+        </a>
+        <a href="{{ url_for('hr_jobs') }}" class="sidebar-link active">
+            <i class="bi bi-briefcase"></i> Job Listings
+        </a>
+        <a href="{{ url_for('hr_new_job') }}" class="sidebar-link">
+            <i class="bi bi-plus-circle"></i> Post New Job
+        </a>
+    </nav>
+
+    <div class="hr-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 style="font-size: 1.8rem;">Job Listings</h1>
+                <p style="color: var(--text-muted);">Manage your open positions</p>
+            </div>
+            <a href="{{ url_for('hr_new_job') }}" class="btn-primary-custom btn-sm">
+                <i class="bi bi-plus-circle"></i> Post New Job
+            </a>
+        </div>
+
+        {% if jobs %}
+        <div class="row g-4">
+            {% for job in jobs %}
+            <div class="col-md-6">
+                <div class="card-glass fade-in">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h3 style="font-size: 1.15rem;">{{ job.title }}</h3>
+                        <span class="badge-stage {{ 'hired' if job.status == 'active' else 'rejected' }}"
+                            style="font-size: 0.72rem;">
+                            {{ job.status | title }}
+                        </span>
+                    </div>
+                    <div class="job-meta mb-2">
+                        <span><i class="bi bi-building"></i> {{ job.department }}</span>
+                        <span><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
+                        <span><i class="bi bi-people"></i> {{ job.applications_count }} apps</span>
+                    </div>
+                    <p
+                        style="color: var(--text-secondary); font-size: 0.88rem; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ job.description }}
+                    </p>
+                    <div class="job-skills mt-2">
+                        {% for skill in job.skills[:4] %}
+                        <span class="skill-tag">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-briefcase"></i>
+            <h3>No Jobs Posted</h3>
+            <p>Create your first job listing to start receiving applications.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

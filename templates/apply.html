@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Apply — {{ job.title }} | RecruiterAI{% endblock %}
+
+{% block content %}
+<section class="py-4r">
+    <div class="container-custom" style="max-width: 750px;">
+        <a href="{{ url_for('job_detail', job_id=job._id) }}" class="btn-secondary-custom btn-sm mb-4">
+            <i class="bi bi-arrow-left"></i> Back to Job
+        </a>
+
+        <div class="card-glass fade-in" style="padding: 2.5rem;">
+            <div class="text-center mb-4">
+                <h1 style="font-size: 1.8rem;">Apply for <span class="text-gradient">{{ job.title }}</span></h1>
+                <p style="color: var(--text-muted);">Fill in your details and upload your resume. Our AI will screen
+                    your profile instantly.</p>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data">
+                <!-- Name -->
+                <div class="mb-3">
+                    <label class="form-label-custom">Full Name <span class="text-orange">*</span></label>
+                    <input type="text" name="name" class="form-control-custom" placeholder="e.g. John Doe" required>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label-custom">Email Address <span class="text-orange">*</span></label>
+                    <input type="email" name="email" class="form-control-custom" placeholder="e.g. john@example.com"
+                        required>
+                </div>
+
+                <!-- Phone -->
+                <div class="mb-3">
+                    <label class="form-label-custom">Phone Number <span class="text-orange">*</span></label>
+                    <input type="tel" name="phone" class="form-control-custom" placeholder="e.g. +91 9876543210"
+                        required>
+                </div>
+
+                <!-- LinkedIn -->
+                <div class="mb-3">
+                    <label class="form-label-custom">LinkedIn Profile</label>
+                    <input type="url" name="linkedin" class="form-control-custom"
+                        placeholder="e.g. https://linkedin.com/in/johndoe">
+                </div>
+
+                <!-- Resume Upload -->
+                <div class="mb-3">
+                    <label class="form-label-custom">Resume / CV <span class="text-orange">*</span></label>
+                    <div style="background: var(--bg-input); border: 2px dashed var(--border); border-radius: var(--radius-md); padding: 2rem; text-align: center; cursor: pointer; transition: var(--transition);"
+                        id="dropZone" onclick="document.getElementById('resumeInput').click()">
+                        <i class="bi bi-cloud-arrow-up"
+                            style="font-size: 2rem; color: var(--accent); display: block; margin-bottom: 0.5rem;"></i>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;" id="uploadLabel">
+                            Drag & drop your resume or <span class="text-orange"
+                                style="cursor: pointer; font-weight: 600;">click to browse</span>
+                        </span>
+                        <br>
+                        <small style="color: var(--text-muted);">PDF or DOCX (max 16MB)</small>
+                        <input type="file" name="resume" id="resumeInput" accept=".pdf,.doc,.docx" required
+                            style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Cover Letter -->
+                <div class="mb-4">
+                    <label class="form-label-custom">Cover Letter (Optional)</label>
+                    <textarea name="cover_letter" class="form-control-custom"
+                        placeholder="Tell us why you're excited about this role..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary-custom btn-lg w-100" id="submitBtn">
+                    <i class="bi bi-send-fill"></i> Submit Application
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // File upload UI
+    const resumeInput = document.getElementById('resumeInput');
+    const uploadLabel = document.getElementById('uploadLabel');
+    const dropZone = document.getElementById('dropZone');
+    const submitBtn = document.getElementById('submitBtn');
+
+    resumeInput.addEventListener('change', function () {
+        if (this.files.length > 0) {
+            uploadLabel.innerHTML = `<i class="bi bi-file-earmark-check" style="color: #4ade80;"></i> <strong>${this.files[0].name}</strong>`;
+            dropZone.style.borderColor = '#4ade80';
+        }
+    });
+
+    // Drag & Drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--accent)';
+        dropZone.style.background = 'rgba(183, 189, 247, 0.05)';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--border)';
+        dropZone.style.background = 'var(--bg-input)';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        resumeInput.files = e.dataTransfer.files;
+        if (resumeInput.files.length > 0) {
+            uploadLabel.innerHTML = `<i class="bi bi-file-earmark-check" style="color: #4ade80;"></i> <strong>${resumeInput.files[0].name}</strong>`;
+            dropZone.style.borderColor = '#4ade80';
+        }
+    });
+
+    // Form submission loading state
+    document.querySelector('form').addEventListener('submit', function () {
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Analyzing your resume...';
+        submitBtn.disabled = true;
+    });
+</script>
+{% endblock %}

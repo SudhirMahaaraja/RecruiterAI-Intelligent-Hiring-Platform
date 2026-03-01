@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+<!-- FIXED VERSION 1.0 -->
+{% block title %}My Applications | RecruiterAI{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container-custom" style="max-width: 1000px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 style="font-size: 1.8rem;">
+                    Welcome back, <span class="text-gradient">{{ session.get('candidate_name', 'Candidate') }}</span>
+                </h1>
+                <p style="color: var(--text-muted);">Track your applications and complete assessments</p>
+            </div>
+        </div>
+
+        {% if applications %}
+        {% for app in applications %}
+        <div class="card-glass fade-in mb-3" style="padding: 1.8rem;">
+            <!-- Pipeline Track -->
+            <div class="pipeline-track mb-3">
+                {% set stages = ['applied', 'assessment', 'coding_round', 'behavioural', 'tech_hr', 'final_hr', 'offer', 'hired'] %}
+                {% for stage in stages %}
+                {% set stage_idx = stages.index(stage) %}
+                {% set app_stage_idx = stages.index(app.stage) if app.stage in stages else -1 %}
+                {% if app.stage == stage %}
+                {% set step_class = 'active' %}
+                {% elif stage == 'applied' %}
+                {% set step_class = 'completed' %}
+                {% elif app_stage_idx > stage_idx %}
+                {% set step_class = 'completed' %}
+                {% else %}
+                {% set step_class = '' %}
+                {% endif %}
+                <div class="pipeline-step {{ step_class }}">
+                    <div class="pipeline-dot">
+                        {% if stage == 'applied' %}<i class="bi bi-check"></i>
+                        {% elif stage == 'assessment' %}<i class="bi bi-pencil-square"></i>
+                        {% elif stage == 'coding_round' %}<i class="bi bi-code-slash"></i>
+                        {% elif stage == 'behavioural' %}<i class="bi bi-chat-dots"></i>
+                        {% elif stage == 'tech_hr' %}<i class="bi bi-person-gear"></i>
+                        {% elif stage == 'final_hr' %}<i class="bi bi-person-check"></i>
+                        {% elif stage == 'offer' %}<i class="bi bi-envelope-paper"></i>
+                        {% elif stage == 'hired' %}<i class="bi bi-trophy"></i>
+                        {% endif %}
+                    </div>
+                    <div class="step-label">
+                        {% if stage == 'coding_round' %}Coding
+                        {% elif stage == 'behavioural' %}Behavioural
+                        {% elif stage == 'tech_hr' %}Tech HR
+                        {% elif stage == 'final_hr' %}Final HR
+                        {% else %}{{ stage | title }}{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 0.3rem;">{{ app.job_title }}</h3>
+                    <span class="badge-stage {{ app.stage }}">
+                        {% if app.stage == 'assessment' %}<i class="bi bi-hourglass-split"></i>
+                        {% elif app.stage == 'coding_round' %}<i class="bi bi-code-slash"></i>
+                        {% elif app.stage == 'behavioural' %}<i class="bi bi-chat-dots"></i>
+                        {% elif app.stage == 'tech_hr' %}<i class="bi bi-person-gear"></i>
+                        {% elif app.stage == 'final_hr' %}<i class="bi bi-person-check"></i>
+                        {% elif app.stage == 'offer' %}<i class="bi bi-envelope-paper"></i>
+                        {% elif app.stage == 'hired' %}<i class="bi bi-check-circle-fill"></i>
+                        {% elif app.stage == 'rejected' %}<i class="bi bi-x-circle"></i>
+                        {% elif app.stage == 'flagged' %}<i class="bi bi-exclamation-triangle"></i>
+                        {% else %}<i class="bi bi-circle"></i>
+                        {% endif %}
+                        {{ app.stage_label }}
+                    </span>
+
+                    {% if app.screening_score is not none %}
+                    {% set screening_color = '#4ade80' if app.screening_score >= 70 else ('var(--cream)' if
+                    app.screening_score >= 50 else '#f87171') %}
+                    <div class="mt-2" style="font-size: 0.85rem; color: var(--text-muted);">
+                        <i class="bi bi-robot"></i> AI Match Score:
+                        <strong {{ ('style="color: ' ~ screening_color ~ ';"') | safe }}>
+                            {{ app.screening_score }}%
+                        </strong>
+                    </div>
+                    {% endif %}
+
+                    {% if app.assessment_score is not none %}
+                    {% set assess_color = ' #4ade80' if app.assessment_score>= 70 else ('var(--cream)' if   
+                            app.assessment_score >= 50 else '#f87171') %}
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                <i class="bi bi-clipboard-check"></i> Assessment Score:
+                                <strong {{ ('style="color: ' ~ assess_color ~ ';"') | safe }}>
+                            {{ app.assessment_score }}%
+                        </strong>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2">
+                    {% if app.stage == 'assessment' and not app.assessment_completed %}
+                    <a href="{{ url_for('take_assessment', application_id=app._id) }}" class="btn-primary-custom btn-sm">
+                        <i class="bi bi-play-fill"></i> Start Round 1
+                    </a>
+                    {% endif %}
+
+                    {% if app.stage == 'coding_round' and not app.coding_completed %}
+                    <a href="{{ url_for('take_coding_assessment', application_id=app._id) }}"
+                        class="btn-primary-custom btn-sm">
+                        <i class="bi bi-code-slash"></i> Start Round 2: Coding
+                    </a>
+                    {% endif %}
+                            </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h3>No Applications Yet</h3>
+                    <p>Start by browsing our open positions and applying!</p>
+                    <a href="{{ url_for('index') }}#openings" class="btn-primary-custom mt-3">
+                        <i class="bi bi-search"></i> Browse Openings
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+</section>
+{% endblock %}

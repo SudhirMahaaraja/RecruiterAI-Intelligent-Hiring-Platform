@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Schedule Meeting | RecruiterAI{% endblock %}
+
+{% block content %}
+<div class="hr-layout">
+    <nav class="hr-sidebar">
+        <div style="padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+            <div
+                style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">
+                Logged in as</div>
+            <div style="font-weight: 600; color: var(--text-primary);">{{ session.hr_user.name }}</div>
+        </div>
+        <a href="{{ url_for('hr_dashboard') }}" class="sidebar-link">
+            <i class="bi bi-grid-1x2"></i> Dashboard
+        </a>
+        <a href="{{ url_for('hr_applications') }}" class="sidebar-link active">
+            <i class="bi bi-people"></i> Applications
+        </a>
+        <a href="{{ url_for('hr_jobs') }}" class="sidebar-link">
+            <i class="bi bi-briefcase"></i> Job Listings
+        </a>
+        <a href="{{ url_for('hr_new_job') }}" class="sidebar-link">
+            <i class="bi bi-plus-circle"></i> Post New Job
+        </a>
+    </nav>
+
+    <div class="hr-content">
+        <a href="{{ url_for('hr_application_detail', application_id=application._id) }}"
+            class="btn-secondary-custom btn-sm mb-4">
+            <i class="bi bi-arrow-left"></i> Back to Application
+        </a>
+
+        <div style="max-width: 650px;">
+            <div class="card-glass fade-in" style="padding: 2.5rem;">
+                <div class="text-center mb-4">
+                    <h1 style="font-size: 1.6rem;">Schedule a Meeting</h1>
+                    <p style="color: var(--text-muted);">
+                        with <strong style="color: var(--accent);">{{ application.name }}</strong>
+                        for <strong>{{ application.job_title }}</strong>
+                    </p>
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label-custom">Meeting Type</label>
+                        <select name="meeting_type" class="form-control-custom">
+                            <option value="interview">Technical Interview</option>
+                            <option value="hr_round">HR Round</option>
+                            <option value="cultural_fit">Cultural Fit Discussion</option>
+                            <option value="offer_discussion">Offer Discussion</option>
+                            <option value="onboarding">Onboarding Call</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label-custom">Date</label>
+                            <input type="date" name="meeting_date" class="form-control-custom" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label-custom">Time</label>
+                            <input type="time" name="meeting_time" class="form-control-custom" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label-custom">Meeting Link (Google Meet / Zoom)</label>
+                        <input type="url" name="meeting_link" class="form-control-custom"
+                            placeholder="e.g. https://meet.google.com/abc-def-ghi">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-custom">Notes</label>
+                        <textarea name="notes" class="form-control-custom"
+                            placeholder="Any instructions or topics to discuss..." rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary-custom btn-lg w-100">
+                        <i class="bi bi-calendar-check"></i> Schedule Meeting
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

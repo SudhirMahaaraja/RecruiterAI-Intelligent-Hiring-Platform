@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}RecruiterAI — Intelligent Hiring Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container-custom">
+        <h1 class="fade-in">
+            Hire Smarter with<br>
+            <span class="text-gradient">AI-Powered Recruitment</span>
+        </h1>
+        <p class="subtitle fade-in stagger-1">
+            From application to onboarding — our AI agent screens resumes,
+            conducts proctored assessments, and manages the entire hiring pipeline
+            so you can focus on finding the perfect fit.
+        </p>
+        <div class="fade-in stagger-2">
+            <a href="#openings" class="btn-primary-custom btn-lg">
+                <i class="bi bi-search"></i> Explore Openings
+            </a>
+            <a href="{{ url_for('hr_login') }}" class="btn-secondary-custom btn-lg ms-3">
+                <i class="bi bi-shield-lock"></i> HR Portal
+            </a>
+        </div>
+        <div class="hero-stats fade-in stagger-3">
+            <div class="hero-stat">
+                <div class="number">{{ jobs | length }}</div>
+                <div class="label">Open Positions</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number">AI</div>
+                <div class="label">Resume Screening</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number">24/7</div>
+                <div class="label">Proctored Assessments</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number">100%</div>
+                <div class="label">End-to-End Tracking</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-4r">
+    <div class="container-custom">
+        <div class="text-center mb-5">
+            <h2 class="section-title">How It <span class="text-gradient">Works</span></h2>
+            <p class="section-subtitle">Our AI handles the heavy lifting at every stage of recruitment</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card-glass feature-card fade-in stagger-1">
+                    <div class="feature-icon"
+                        style="background: linear-gradient(135deg, rgba(87, 106, 143, 0.2), rgba(183, 189, 247, 0.1)); color: var(--accent);">
+                        <i class="bi bi-file-earmark-person"></i>
+                    </div>
+                    <h4>Apply Online</h4>
+                    <p>Candidates browse openings and submit their resume. Quick and easy application process.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-glass feature-card fade-in stagger-2">
+                    <div class="feature-icon"
+                        style="background: linear-gradient(135deg, rgba(255, 116, 68, 0.15), rgba(255, 248, 222, 0.1)); color: var(--orange);">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <h4>AI Screening</h4>
+                    <p>Our AI instantly analyzes resumes against job requirements using advanced NLP matching.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-glass feature-card fade-in stagger-3">
+                    <div class="feature-icon"
+                        style="background: linear-gradient(135deg, rgba(255, 248, 222, 0.15), rgba(87, 106, 143, 0.1)); color: var(--cream);">
+                        <i class="bi bi-camera-video"></i>
+                    </div>
+                    <h4>Proctored Assessment</h4>
+                    <p>AI-monitored tests detect tab switching, copy-paste, and use of external help via webcam.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-glass feature-card fade-in stagger-4">
+                    <div class="feature-icon"
+                        style="background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(183, 189, 247, 0.1)); color: #4ade80;">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h4>Interview & Onboard</h4>
+                    <p>Schedule interviews, extend offers, and track candidates through onboarding — all in one place.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Open Positions -->
+<section id="openings" class="py-4r">
+    <div class="container-custom">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Open <span class="text-gradient">Positions</span></h2>
+            <p class="section-subtitle">Find the role that matches your skills and aspirations</p>
+        </div>
+
+        {% if jobs %}
+        <div class="row g-4">
+            {% for job in jobs %}
+            <div class="col-md-6">
+                <div class="card-glass job-card fade-in stagger-{{ loop.index }}">
+                    <div class="job-header">
+                        <div
+                            class="job-icon {% if job.department == 'Engineering' %}engineering{% elif job.department == 'Data & Analytics' %}data{% else %}infra{% endif %}">
+                            {% if job.department == 'Engineering' %}
+                            <i class="bi bi-code-slash"></i>
+                            {% elif job.department == 'Data & Analytics' %}
+                            <i class="bi bi-graph-up-arrow"></i>
+                            {% else %}
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h3>{{ job.title }}</h3>
+                            <div class="job-meta">
+                                <span><i class="bi bi-building"></i> {{ job.department }}</span>
+                                <span><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
+                                <span><i class="bi bi-clock"></i> {{ job.type }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="job-description">{{ job.description }}</p>
+                    <div class="job-meta mb-2">
+                        <span><i class="bi bi-bar-chart"></i> {{ job.experience }}</span>
+                        <span><i class="bi bi-cash-stack"></i> {{ job.salary_range }}</span>
+                    </div>
+                    <div class="job-skills">
+                        {% for skill in job.skills[:6] %}
+                        <span class="skill-tag">{{ skill }}</span>
+                        {% endfor %}
+                        {% if job.skills|length > 6 %}
+                        <span class="skill-tag" style="border-color: var(--text-muted); color: var(--text-muted);">+{{
+                            job.skills|length - 6 }} more</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('job_detail', job_id=job._id) }}" class="btn-secondary-custom btn-sm">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+                        <a href="{{ url_for('apply', job_id=job._id) }}" class="btn-primary-custom btn-sm">
+                            <i class="bi bi-send"></i> Apply Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>No Openings Right Now</h3>
+            <p>Check back soon — we're always growing!</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

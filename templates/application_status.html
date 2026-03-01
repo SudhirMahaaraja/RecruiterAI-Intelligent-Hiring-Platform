@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Application Status | RecruiterAI{% endblock %}
+
+{% block content %}
+<section class="py-4r">
+    <div class="container-custom" style="max-width: 750px;">
+        <div class="card-glass fade-in" style="padding: 2.5rem;">
+            <div class="text-center mb-4">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">
+                    {% if application.stage == 'assessment' %}📝
+                    {% elif application.stage == 'coding_round' %}💻
+                    {% elif application.stage == 'behavioural' %}💬
+                    {% elif application.stage == 'tech_hr' %}⚙️
+                    {% elif application.stage == 'final_hr' %}🤝
+                    {% elif application.stage == 'hired' %}🎉
+                    {% elif application.stage == 'rejected' %}📋
+                    {% else %}📨{% endif %}
+                </div>
+                <h1 style="font-size: 1.6rem;">Application Submitted</h1>
+                <p style="color: var(--text-muted);">for <strong>{{ application.job_title }}</strong></p>
+            </div>
+
+            <!-- Pipeline Tracker -->
+            <div class="pipeline-track mb-4">
+                {% set stages = ['applied', 'assessment', 'coding_round', 'behavioural', 'tech_hr', 'final_hr', 'offer', 'hired'] %}
+                {% for stage in stages %}
+                {% set stage_idx = stages.index(stage) %}
+                {% set app_stage_idx = stages.index(application.stage) if application.stage in stages else -1 %}
+                <div
+                    class="pipeline-step {% if application.stage == stage %}active{% elif stage == 'applied' %}completed{% elif app_stage_idx > stage_idx %}completed{% endif %}">
+                    <div class="pipeline-dot">
+                        {% if stage == 'applied' %}<i class="bi bi-check"></i>
+                        {% elif stage == 'assessment' %}<i class="bi bi-pencil-square"></i>
+                        {% elif stage == 'coding_round' %}<i class="bi bi-code-slash"></i>
+                        {% elif stage == 'behavioural' %}<i class="bi bi-chat-dots"></i>
+                        {% elif stage == 'tech_hr' %}<i class="bi bi-person-gear"></i>
+                        {% elif stage == 'final_hr' %}<i class="bi bi-person-check"></i>
+                        {% elif stage == 'offer' %}<i class="bi bi-envelope-paper"></i>
+                        {% elif stage == 'hired' %}<i class="bi bi-trophy"></i>
+                        {% endif %}
+                    </div>
+                    <div class="step-label">
+                        {% if stage == 'coding_round' %}Coding
+                        {% elif stage == 'behavioural' %}Behavioural
+                        {% elif stage == 'tech_hr' %}Tech HR
+                        {% elif stage == 'final_hr' %}Final HR
+                        {% else %}{{ stage | title }}{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="text-center mb-4">
+                <span class="badge-stage {{ application.stage }}" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">
+                    {{ application.stage_label }}
+                </span>
+            </div>
+
+            {% if application.screening_details %}
+            <hr class="divider">
+            <h4 style="color: var(--accent); font-size: 1rem; margin-bottom: 1rem;">
+                <i class="bi bi-robot"></i> AI Screening Results
+            </h4>
+            <div class="row g-3 mb-3">
+                <div class="col-4">
+                    <div class="stat-card purple" style="padding: 1rem; text-align: center;">
+                        <div class="stat-number" style="font-size: 1.5rem;">{{ application.screening_details.skill_match
+                            }}%</div>
+                        <div class="stat-label">Skill Match</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-card blue" style="padding: 1rem; text-align: center;">
+                        <div class="stat-number" style="font-size: 1.5rem;">{{
+                            application.screening_details.description_match }}%</div>
+                        <div class="stat-label">JD Match</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-card orange" style="padding: 1rem; text-align: center;">
+                        <div class="stat-number" style="font-size: 1.5rem;">{{
+                            application.screening_details.experience_match }}%</div>
+                        <div class="stat-label">Experience</div>
+                    </div>
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">{{ application.screening_details.summary }}</p>
+            {% endif %}
+
+            <hr class="divider">
+
+            <div class="text-center">
+                {% if application.stage == 'assessment' %}
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    You've been shortlisted! Complete your assessment to move forward.
+                </p>
+                <a href="{{ url_for('candidate_login') }}" class="btn-primary-custom">
+                    <i class="bi bi-play-fill"></i> Go to Assessment
+                </a>
+                {% else %}
+                <a href="{{ url_for('index') }}" class="btn-secondary-custom">
+                    <i class="bi bi-house-door"></i> Back to Home
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
