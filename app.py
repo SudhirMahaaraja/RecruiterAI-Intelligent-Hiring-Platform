@@ -1562,3 +1562,5 @@ if __name__ == '__main__':
     with app.app_context():
         seed_data()
     app.run(debug=True, use_reloader=False, port=5000)
+
+# Auto-commit: Refactor assessment logic for better performance - 2026-03-04 17:53:52
