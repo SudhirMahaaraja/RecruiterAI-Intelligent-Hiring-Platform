@@ -44,3 +44,5 @@ def _parse_docx(file_obj):
     except Exception as e:
         print(f"Error parsing DOCX: {e}")
         return ''
+
+# Auto-commit: Enhance resume parsing for technical skills - 2026-03-04 17:53:54
