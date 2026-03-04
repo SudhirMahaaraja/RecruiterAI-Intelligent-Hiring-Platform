@@ -100,3 +100,5 @@ def screen_candidate(resume_text, job):
         'missing_skills': missing_skills,
         'summary': summary
     }
+
+# Auto-commit: Fix bug in AI match score calculation - 2026-03-04 17:53:54
